@@ -31,7 +31,7 @@ PlatformerGame.Game.prototype = {
         this.level = 1;
         this.createUnicorn();
 
-
+        this.gameisover = false;
         //  Finally some stars to collect
         this.smashers = this.game.add.group();
 
@@ -53,6 +53,7 @@ PlatformerGame.Game.prototype = {
         this.timer = 0;
         this.spaceKey = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         this.rKey = this.game.input.keyboard.addKey(Phaser.Keyboard.R);
+        this.rKey.onDown.add(this.reset, this);
         this.smasher = this.game.add.sprite(500, 150, "smasher");
         this.smasherReleased = false;
         this.currentSmasher = null;
@@ -100,9 +101,13 @@ PlatformerGame.Game.prototype = {
     },
 
     gameover: function() {
-        this.game.add.text(120, 300, '                      GAME OVER\nYou let one of the pesky yellows through!', { fontSize: '32px Arial', fill: '#000' });
-        this.game.paused = true;
+        this.game.add.text(120, 270, '                      GAME OVER\nYou let one of the pesky yellows through!', { fontSize: '32px Arial', fill: '#000' });
+        this.gameisover = true;
 
+    },
+
+    reset: function() {
+        this.state.restart();
     },
 
     update: function() {
@@ -121,13 +126,13 @@ PlatformerGame.Game.prototype = {
         //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
         this.game.physics.arcade.overlap(this.players, this.smashers, this.squash, null, this);
 
+        if (this.gameisover) {
+            return true;
+        }
+
         //  Reset the players velocity (movement)
         
 
-        if (this.rKey.isDown)
-        {
-            this.state.restart();
-        }
         if (this.spaceKey.isDown)
         {   
             if (!this.smasherReleased) {
@@ -140,10 +145,14 @@ PlatformerGame.Game.prototype = {
                 unicorn.body.velocity.y = -1 * (this.game.rnd.integerInRange(10,170));
             }
 
-            if(unicorn.x > (this.game.world.width - 62)) {
+            if(unicorn.alive && unicorn.x > (this.game.world.width - 62)) {
                 if (unicorn.offset == 0) {
                     this.gameover();
                 }
+				else {
+					this.score++;
+					this.scoreText.text = "Score: " + this.score;
+				}
                 unicorn.kill();
 
             }
@@ -175,7 +184,7 @@ PlatformerGame.Game.prototype = {
             player.animations.play("squash");
             player.squashed = true;
             if (player.offset == 0) {
-                this.score += 100;
+                this.score += 25;
             }
             else {
                 this.score -= 10;
